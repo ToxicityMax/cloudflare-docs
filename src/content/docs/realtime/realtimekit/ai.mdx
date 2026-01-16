@@ -5,269 +5,404 @@ sidebar:
   order: 10
 ---
 
-RealtimeKit provides AI-powered features to enhance your meetings, including real-time transcription and automatic meeting summaries. These features help you capture important discussions and generate concise overviews of your meetings.
+import { Tabs, TabItem } from "@astrojs/starlight/components";
 
-## Meeting transcription
+RealtimeKit provides AI-powered transcription and summarization using Cloudflare's AI infrastructure. There are two transcription modes:
 
-RealtimeKit's meeting transcription allows you to transcribe your RealtimeKit meetings in real-time, making it easy to capture important discussions and refer back to them later.
+| Mode | Provider | Use Case | Output |
+|------|----------|----------|--------|
+| **Real-time** | [Deepgram Nova-3](/workers-ai/models/deepgram-nova-3/) | Live captions during meeting | Streaming transcripts |
+| **Post-meeting** | [Whisper Large v3 Turbo](/workers-ai/models/whisper-large-v3-turbo/) | Offline processing after meeting | SRT, VTT, CSV, JSON files |
 
-### Control transcriptions using presets
+## Real-time transcription
 
-You can control whether a participant's audio will be transcribed using the `transcription_enabled` flag in the participant's preset. All participants with `transcription_enabled` turned on in their preset will be able to generate transcripts in real-time in a RealtimeKit meeting.
+Real-time transcription uses [Deepgram Nova-3](/workers-ai/models/deepgram-nova-3/) via Cloudflare AI Gateway to provide low-latency speech-to-text during live meetings.
 
-Follow the [Preset Creation Guide](/realtime/realtimekit/concepts/preset/) to create a new preset.
+### Enable via preset
 
-### Configure transcription behavior
+Set `transcription_enabled: true` in the participant's [preset](/realtime/realtimekit/concepts/preset/). Only participants with this flag will have their audio transcribed.
 
-You can control transcription behavior through a configurable AI setup. When creating a meeting using the REST API, you can pass an AI configuration for transcriptions. This allows for greater control over the transcription process.
+### Configure transcription
 
-#### Supported languages
-
-You can specify the language for transcription to ensure accurate and relevant results. The following languages are supported:
-
-- **English (United States)** - `en-US`
-- **English (India)** - `en-IN`
-- **German** - `de`
-- **Hindi** - `hi`
-- **Swedish** - `sv`
-- **Russian** - `ru`
-- **Polish** - `pl`
-- **Greek** - `el`
-- **French** - `fr`
-- **Dutch** - `nl`
-- **Turkish** - `tr`
-- **Spanish** - `es`
-- **Italian** - `it`
-- **Portuguese** - `pt`
-- **Romanian** - `ro`
-- **Korean** - `ko`
-- **Indonesian** - `id`
-- **Multi** - `multi`
-
-Example:
-
-```json
-"language": "en-US"
-```
-
-#### Keywords
-
-Keywords can be added to help the transcription engine accurately detect and transcribe specific terms, such as names, technical jargon, or other context-specific words. This is particularly useful in meetings where certain terms are frequently used and need to be recognized correctly.
-
-Example:
-
-```json
-"keywords": ["RealtimeKit", "Mary", "Sue"]
-```
-
-#### Profanity filter
-
-You can enable or disable the profanity filter based on your needs. This feature ensures that any offensive language is either included or excluded from the transcriptions, depending on your preference.
-
-Example:
-
-```json
-"profanity_filter": false
-```
-
-#### Example configuration
-
-Here is an example of how to pass the AI configuration in the meeting creation API:
+Pass `ai_config.transcription` when [creating a meeting](/realtime/realtimekit/concepts/meeting/):
 
 ```json
 {
-	"title": "Meeting Transcriptions",
-	"ai_config": {
-		"transcription": {
-			"keywords": ["RealtimeKit"],
-			"language": "en-US",
-			"profanity_filter": false
-		}
-	}
+  "title": "Team Standup",
+  "ai_config": {
+    "transcription": {
+      "language": "en-US",
+      "keywords": ["RealtimeKit", "Cloudflare", "WebRTC"],
+      "profanity_filter": false
+    }
+  }
 }
 ```
 
-### Consume transcripts
+#### Configuration options
 
-There are three ways to consume transcripts:
+| Option | Type | Description |
+|--------|------|-------------|
+| `language` | string | Transcription language code. Default: `en-US` |
+| `keywords` | string[] | Terms to boost recognition accuracy (names, jargon) |
+| `profanity_filter` | boolean | Filter offensive language. Default: `false` |
 
-1. **Client Core SDK** - The transcripts can be consumed on the client-side using the RealtimeKit SDK. These transcripts are generated on the server in real-time
-2. **Webhooks** - The meeting transcript can be consumed via a webhook after the meeting ends
-3. **REST API** - The meeting transcript can be fetched via the REST API
+#### Supported languages (Real-time)
 
-#### Consume transcripts in real-time
+Real-time transcription supports these languages via Deepgram Nova-3:
 
-For consuming transcripts in real-time on the client SDK, ensure that the `transcription_enabled` flag is enabled in the preset. Transcripts for all participants with this flag set will be broadcasted in the meeting.
+<Tabs>
+<TabItem label="Common">
 
-You can use the `meeting.ai` object to access the transcripts:
+| Language | Code |
+|----------|------|
+| English (US) | `en-US` |
+| English (India) | `en-IN` |
+| Multilingual | `multi` |
+| German | `de` |
+| French | `fr` |
+| Spanish | `es` |
+| Italian | `it` |
+| Portuguese | `pt` |
+| Dutch | `nl` |
+| Russian | `ru` |
+| Japanese | `ja` |
+| Korean | `ko` |
+| Chinese | `zh` |
+
+</TabItem>
+<TabItem label="All Languages">
+
+| Language | Code | Language | Code |
+|----------|------|----------|------|
+| Afrikaans | `af` | Amharic | `am` |
+| Arabic | `ar` | Assamese | `as` |
+| Azerbaijani | `az` | Bashkir | `ba` |
+| Belarusian | `be` | Bulgarian | `bg` |
+| Bengali | `bn` | Tibetan | `bo` |
+| Breton | `br` | Bosnian | `bs` |
+| Catalan | `ca` | Czech | `cs` |
+| Welsh | `cy` | Danish | `da` |
+| German | `de` | Greek | `el` |
+| English | `en` | English (US) | `en-US` |
+| English (India) | `en-IN` | Spanish | `es` |
+| Estonian | `et` | Basque | `eu` |
+| Persian | `fa` | Finnish | `fi` |
+| Faroese | `fo` | French | `fr` |
+| Galician | `gl` | Gujarati | `gu` |
+| Hausa | `ha` | Hawaiian | `haw` |
+| Hebrew | `he` | Hindi | `hi` |
+| Croatian | `hr` | Haitian Creole | `ht` |
+| Hungarian | `hu` | Armenian | `hy` |
+| Indonesian | `id` | Icelandic | `is` |
+| Italian | `it` | Japanese | `ja` |
+| Javanese | `jw` | Georgian | `ka` |
+| Kazakh | `kk` | Khmer | `km` |
+| Kannada | `kn` | Korean | `ko` |
+| Latin | `la` | Luxembourgish | `lb` |
+| Lingala | `ln` | Lao | `lo` |
+| Lithuanian | `lt` | Latvian | `lv` |
+| Malagasy | `mg` | Maori | `mi` |
+| Macedonian | `mk` | Malayalam | `ml` |
+| Mongolian | `mn` | Marathi | `mr` |
+| Malay | `ms` | Maltese | `mt` |
+| Myanmar | `my` | Nepali | `ne` |
+| Dutch | `nl` | Norwegian Nynorsk | `nn` |
+| Norwegian | `no` | Occitan | `oc` |
+| Punjabi | `pa` | Polish | `pl` |
+| Pashto | `ps` | Portuguese | `pt` |
+| Romanian | `ro` | Russian | `ru` |
+| Sanskrit | `sa` | Sindhi | `sd` |
+| Sinhala | `si` | Slovak | `sk` |
+| Slovenian | `sl` | Shona | `sn` |
+| Somali | `so` | Albanian | `sq` |
+| Serbian | `sr` | Sundanese | `su` |
+| Swedish | `sv` | Swahili | `sw` |
+| Tamil | `ta` | Telugu | `te` |
+| Tajik | `tg` | Thai | `th` |
+| Turkmen | `tk` | Tagalog | `tl` |
+| Turkish | `tr` | Tatar | `tt` |
+| Ukrainian | `uk` | Urdu | `ur` |
+| Uzbek | `uz` | Vietnamese | `vi` |
+| Yiddish | `yi` | Yoruba | `yo` |
+| Chinese | `zh` | Cantonese | `yue` |
+| Multilingual | `multi` | | |
+
+</TabItem>
+</Tabs>
+
+:::note
+Use `multi` for meetings with multiple languages. This enables automatic language detection but may have slightly higher latency.
+:::
+
+### Consume real-time transcripts
+
+#### Client SDK
 
 ```javascript
-console.log(meeting.ai.transcripts);
-```
+// Access all transcripts
+const transcripts = meeting.ai.transcripts;
 
-The transcripts are also emitted by the `meeting.ai` object, so a listener can be attached to it:
-
-```javascript
-meeting.ai.on("transcript", (transcriptData) => {
-	console.log("Transcript:", transcriptData);
+// Listen for new transcripts
+meeting.ai.on("transcript", (data) => {
+  console.log(`${data.name}: ${data.transcript}`);
+  console.log(`Partial: ${data.isPartialTranscript}`);
 });
 ```
 
-As participants speak during the meeting, you will receive partial transcripts, giving you real-time feedback even before they finish their sentences. The `isPartialTranscript` flag in the transcript data shows whether the transcript is partial or final.
-
-Example transcript data:
+Transcript event payload:
 
 ```json
 {
-	"id": "1a2b3c4d-5678-90ab-cdef-1234567890ab",
-	"name": "Alice",
-	"peerId": "4f5g6h7i-8j9k-0lmn-opqr-1234567890st",
-	"userId": "uvwxyz-1234-5678-90ab-cdefghijklmn",
-	"customParticipantId": "abc123xyz",
-	"transcript": "Hello?",
-	"isPartialTranscript": true,
-	"date": "Wed Aug 07 2024 10:15:30 GMT+0530 (India Standard Time)"
+  "id": "1a2b3c4d-5678-90ab-cdef-1234567890ab",
+  "name": "Alice",
+  "peerId": "4f5g6h7i-8j9k-0lmn-opqr-1234567890st",
+  "userId": "uvwxyz-1234-5678-90ab-cdefghijklmn",
+  "customParticipantId": "abc123xyz",
+  "transcript": "Hello everyone",
+  "isPartialTranscript": false,
+  "date": "2024-08-07T10:15:30.000Z"
 }
 ```
 
-In the example above, `isPartialTranscript` is `true`, indicating the transcript is still in progress. Once the participant finishes speaking, the final transcript will be sent with `isPartialTranscript` set to `false`. This helps you distinguish between ongoing speech and completed transcriptions, making the transcription process more dynamic and responsive.
+| Field | Description |
+|-------|-------------|
+| `isPartialTranscript` | `true` = interim result (speaker still talking), `false` = final result |
+| `peerId` | Unique per connection (changes if participant rejoins) |
+| `userId` | Persistent participant identifier |
+| `customParticipantId` | Your custom identifier from Add Participant API |
 
-#### Consume transcript via webhook
+## Post-meeting transcription
 
-You can configure a webhook with the `meeting.transcript` event enabled to receive the meeting transcript after the meeting has ended. You can do this either on the Developer Portal or using the REST API.
+Post-meeting transcription uses [Whisper Large v3 Turbo](/workers-ai/models/whisper-large-v3-turbo/) via Workers AI. It processes recorded audio after the meeting ends and generates transcript files in multiple formats.
 
-For webhook format details, refer to [Webhooks](/api/resources/realtime_kit/subresources/webhooks/).
+### How it works
 
-### Fetch the meeting transcript
+1. During the meeting, audio is recorded per participant
+2. When the meeting ends, recordings are downloaded from storage
+3. Each participant's audio is transcribed using Whisper
+4. Transcripts are consolidated into a unified timeline
+5. Output files are uploaded to R2 storage
+6. Webhook is sent with download URLs
 
-You do not need to rely on the webhook to get the transcript for a meeting. RealtimeKit provides a REST API to obtain the transcripts for a particular session. You can use this API to get the transcript for a meeting at a later time. RealtimeKit stores the transcript of a meeting for 7 days since the start of the meeting.
+### Supported languages (Post-meeting)
 
-The transcript is received in the form of a CSV with the following format:
+Post-meeting transcription supports all ISO 639-1 language codes via Whisper:
 
+:::caution[Language code mapping]
+Whisper does not support `en-US`, `en-IN`, or `multi` codes. These are automatically mapped to `en` for post-meeting transcription.
+:::
+
+All languages from the [full language list](#supported-languages-real-time) are supported except:
+- `en-US` → mapped to `en`
+- `en-IN` → mapped to `en`  
+- `multi` → mapped to `en`
+
+### Output formats
+
+Post-meeting transcripts are available in four formats:
+
+| Format | Content-Type | Use Case |
+|--------|--------------|----------|
+| **CSV** | `text/csv` | Spreadsheet analysis, data processing |
+| **SRT** | `application/x-subrip` | Video subtitle overlay |
+| **VTT** | `text/vtt` | Web video captions (HTML5 `<track>`) |
+| **JSON** | `application/json` | Programmatic access, custom UIs |
+
+#### CSV format
+
+```csv
+Timestamp,Participant ID,User ID,Custom Participant ID,Participant Name,Transcript
+2024-08-07T10:15:30.000Z,peer-123,user-456,cust-789,Alice,Hello everyone
+2024-08-07T10:15:35.000Z,peer-234,user-567,cust-890,Bob,Hi Alice
 ```
-Timestamp, Participant ID, User ID, Custom Participant ID, Participant Name, Transcript
+
+#### JSON format
+
+```json
+[
+  {
+    "startTime": 0,
+    "endTime": 2.5,
+    "sentence": "Hello everyone",
+    "peerData": {
+      "id": "peer-123",
+      "userId": "user-456",
+      "displayName": "Alice",
+      "cpi": "cust-789"
+    }
+  }
+]
 ```
 
-Field descriptions:
+### Fetch transcripts
 
-- **Timestamp** - An ISO 8601 format string indicating the time of utterance (or the time of speech)
-- **Participant ID** - An identifier for individual peers in the meeting. For instance, if the participant joins the meeting twice, both peers will have the same User ID but different Participant IDs
-- **User ID** - An identifier for a participant in the meeting, as returned by the Add Participant API call
-- **Custom Participant ID** - An identifier that you can specify to identify a user. This can be sent in the request body of the Add Participant API call
-- **Participant Name** - The display name of the user
-- **Transcript** - The transcribed utterance
+#### Via webhook
 
-### Test transcription
+Configure a webhook with `meeting.transcript` event:
 
-Once you have configured a preset and a webhook according to the instructions above, you can proceed to test whether meeting transcription is working for your organization:
+```json
+{
+  "event": "meeting.transcript",
+  "meetingId": "meeting-123",
+  "sessionId": "session-456",
+  "transcriptDownloadUrl": "https://...",
+  "transcriptDownloadUrlExpiry": "2024-08-14T10:15:30.000Z"
+}
+```
 
-1. [Create a meeting](/realtime/realtimekit/concepts/meeting/)
-2. [Add a participant](/realtime/realtimekit/concepts/participant/) to the meeting. Make sure that the preset you use was configured according to this guide
-3. Join the meeting with the `authToken` you just obtained. As you unmute and speak, your speech should be getting transcribed in real-time for all the participants in the meeting
-4. Once the meeting ends, you will receive a webhook with the event `meeting.transcript`. The body of this webhook will consist of the entire meeting transcript
+#### Via REST API
+
+Fetch transcript for a session (available for 7 days):
+
+```bash
+curl -X GET "https://api.realtime.cloudflare.com/v2/sessions/{sessionId}/transcript" \
+  -H "Authorization: Basic {credentials}"
+```
+
+Response:
+
+```json
+{
+  "sessionId": "session-456",
+  "transcriptDownloadUrl": "https://...",
+  "transcriptDownloadUrlExpiry": "2024-08-14T10:15:30.000Z"
+}
+```
 
 ## Meeting summary
 
-RealtimeKit's meeting summary feature allows you to automatically generate concise summaries of your meeting based on the transcription data. This feature makes it easy to capture key points and action items, providing a concise overview of your discussions.
+Summarization uses [Llama 3.2 3B Instruct](/workers-ai/models/llama-3.2-3b-instruct/) to generate meeting summaries from transcript data.
 
 :::note
-
-To generate a meeting summary, transcription must be enabled. The summarization feature relies on the transcription data to create accurate and meaningful summaries.
-
+Transcription must be enabled to use summarization.
 :::
 
-### Enable meeting summarization
+### Enable summarization
 
-To enable automatic summarization post meeting, set the `summarize_on_end` flag when creating a meeting using the REST API.
-
-#### Summarization configuration options
-
-You can tailor the summarization process using the following configuration options:
-
-##### Word limit
-
-Define the word limit for the summary, ensuring it fits your needs. You can set a limit between 150 and 1000 words.
-
-Example:
-
-```json
-"word_limit": 500
-```
-
-##### Text format
-
-Choose the format for the summary text. Supported formats are:
-
-- `plain_text`
-- `markdown`
-
-Example:
-
-```json
-"text_format": "markdown"
-```
-
-##### Summary type
-
-Select the type of summary based on the nature of the meeting. Supported types are:
-
-- `general`
-- `team_meeting`
-- `sales_call`
-- `client_check_in`
-- `interview`
-- `daily_standup`
-- `one_on_one_meeting`
-- `lecture`
-- `code_review`
-
-Example:
-
-```json
-"summary_type": "team_meeting"
-```
-
-#### Example configuration
-
-Here is an example of how to enable summarization in the meeting creation API call:
+Set `summarize_on_end: true` when creating a meeting:
 
 ```json
 {
-	"title": "Team Meeting",
-	"ai_config": {
-		"summarization": {
-			"word_limit": 500,
-			"text_format": "plain_text",
-			"summary_type": "team_meeting"
-		}
-	},
-	"summarize_on_end": true
+  "title": "Product Review",
+  "ai_config": {
+    "transcription": {
+      "language": "en-US"
+    },
+    "summarization": {
+      "word_limit": 500,
+      "text_format": "markdown",
+      "summary_type": "team_meeting"
+    }
+  },
+  "summarize_on_end": true
 }
 ```
 
+### Configuration options
+
+| Option | Type | Values | Description |
+|--------|------|--------|-------------|
+| `word_limit` | number | 150-1000 | Maximum words in summary |
+| `text_format` | string | `plain_text`, `markdown` | Output format |
+| `summary_type` | string | See below | Meeting context for better summaries |
+
+#### Summary types
+
+| Type | Best for |
+|------|----------|
+| `general` | Default, any meeting |
+| `team_meeting` | Regular team syncs |
+| `sales_call` | Customer sales conversations |
+| `client_check_in` | Client status updates |
+| `interview` | Job interviews |
+| `daily_standup` | Agile standups |
+| `one_on_one_meeting` | 1:1 meetings |
+| `lecture` | Educational content |
+| `code_review` | Technical code reviews |
+
 ### Consume summaries
 
-There are two ways to consume the generated summaries:
+#### Via webhook
 
-1. **Webhooks** - Receive the meeting summary via a webhook after the meeting ends
-2. **API Call** - Fetch the meeting summary using the REST API
+Configure `meeting.summary` event:
 
-#### Fetch summary via webhook
+```json
+{
+  "event": "meeting.summary",
+  "meetingId": "meeting-123",
+  "sessionId": "session-456",
+  "summaryDownloadUrl": "https://...",
+  "summaryDownloadUrlExpiry": "2024-08-14T10:15:30.000Z"
+}
+```
 
-To receive the meeting summary automatically once the meeting concludes, configure a webhook with the `meeting.summary` event enabled. This can be done either on the Developer Portal or using the REST API.
+#### Via REST API
 
-For webhook format details, refer to [Webhooks](/api/resources/realtime_kit/subresources/webhooks/).
+```bash
+# Get summary
+curl -X GET "https://api.realtime.cloudflare.com/v2/sessions/{sessionId}/summary" \
+  -H "Authorization: Basic {credentials}"
 
-#### Fetch summary via API call
+# Trigger summary manually (if not auto-generated)
+curl -X POST "https://api.realtime.cloudflare.com/v2/sessions/{sessionId}/summary" \
+  -H "Authorization: Basic {credentials}"
+```
 
-You can use the API to fetch the summary for a meeting at a later time using the REST API. RealtimeKit stores the summary of a meeting for 7 days since the start of the meeting.
+## Complete example
 
-### Trigger summary manually
+Create a meeting with full AI configuration:
 
-If you need to generate a summary after the meeting has ended, you can trigger the summary using the REST API.
+```json
+{
+  "title": "Weekly Engineering Sync",
+  "ai_config": {
+    "transcription": {
+      "language": "en-US",
+      "keywords": ["Kubernetes", "deployment", "CI/CD"],
+      "profanity_filter": false
+    },
+    "summarization": {
+      "word_limit": 300,
+      "text_format": "markdown",
+      "summary_type": "team_meeting"
+    }
+  },
+  "summarize_on_end": true
+}
+```
 
-## Next steps
+Handle transcripts in your client:
 
-Explore additional capabilities:
+```javascript
+// Real-time display
+meeting.ai.on("transcript", (data) => {
+  if (data.isPartialTranscript) {
+    updatePartialCaption(data.peerId, data.transcript);
+  } else {
+    finalizeCaption(data.peerId, data.transcript);
+  }
+});
 
-- [Webhooks](/api/resources/realtime_kit/subresources/webhooks/) - Set up webhooks for AI events
+// Store for later
+const allTranscripts = [];
+meeting.ai.on("transcript", (data) => {
+  if (!data.isPartialTranscript) {
+    allTranscripts.push(data);
+  }
+});
+```
+
+## Storage and retention
+
+- Transcripts and summaries are stored for **7 days** from meeting start
+- Files are stored in R2 with presigned URLs for secure access
+- Download URLs expire after 7 days
+
+## Related resources
+
+- [Webhooks](/api/resources/realtime_kit/subresources/webhooks/) - Configure webhook events
+- [Presets](/realtime/realtimekit/concepts/preset/) - Enable transcription per participant
+- [Deepgram Nova-3](/workers-ai/models/deepgram-nova-3/) - Real-time transcription model
+- [Whisper Large v3 Turbo](/workers-ai/models/whisper-large-v3-turbo/) - Post-meeting transcription model
+- [Llama 3.2](/workers-ai/models/llama-3.2-3b-instruct/) - Summarization model
